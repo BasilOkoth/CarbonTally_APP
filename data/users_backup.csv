@@ -1,0 +1,10 @@
+id,uid,email,fullName,role,status,treeTrackingNumber,createdAt,approvedAt,firebase_doc_id,last_sync_time,approved
+1,2Nv3B46QTpODcyAQ14MgNgNQL7t1,okothbasil81@gmail.com,Emmaculate Adhiambo Kaudo,individual,pending,CT-D972356C,2025-07-13T16:31:42.986000+00:00,,2Nv3B46QTpODcyAQ14MgNgNQL7t1,2025-07-16T18:22:07.896062,0
+2,2f53ahY2zCRU8qgGZJIRczcU1623,basilchriss@students.uonbi.ac.ke,Nelson Omondi,individual,approved,CT-945DA348,2025-07-02T06:04:09.287000+00:00,,2f53ahY2zCRU8qgGZJIRczcU1623,2025-07-16T18:22:07.902780,0
+3,9XIy5THfhmYfshrQQ5QD2hrbycT2,kabasil81@gmail.com,Okoth Basil,individual,approved,CT-8807E558,2025-06-28T11:53:36.282000+00:00,,9XIy5THfhmYfshrQQ5QD2hrbycT2,2025-07-16T18:22:07.907976,0
+4,AiCDbMFFznaKa86j4ArP0HULIug1,programmes@tropical-biology.org,basilo,individual,rejected,CT-A3E6696C,2025-07-09T13:26:11.562000+00:00,,AiCDbMFFznaKa86j4ArP0HULIug1,2025-07-16T18:22:07.911618,0
+5,LHlMckmdBOP8pWbyScUG4jnYqN12,misori.village@gmail.com,Steve Misori ,individual,approved,CT-8106071B,2025-07-05T13:56:07.727000+00:00,,LHlMckmdBOP8pWbyScUG4jnYqN12,2025-07-16T18:22:07.914698,0
+6,X6xK62lXSIM2j3HydtZg0d3VFnj2,udah@sehubke.org,Safe Environment Hub-Kenya ,institution,approved,CT-D8D918AD,2025-06-19T08:56:02.883000+00:00,,X6xK62lXSIM2j3HydtZg0d3VFnj2,2025-07-16T18:22:07.916934,0
+7,wS3i5kfDiYdOI7dJkPOxTN7VrZi1,okothbasil45@gmail.com,Admin,admin,approved,CT-6C4E7A5F,2025-06-25T17:45:47.634000+00:00,,wS3i5kfDiYdOI7dJkPOxTN7VrZi1,2025-07-16T18:22:07.923209,0
+8,wjs3BZHy91f6x6feBipSpnAUF793,alexlokwee2@gmail.com,Alex Lokwee,individual,approved,CT-1D040F09,2025-06-28T14:30:08.755000+00:00,,wjs3BZHy91f6x6feBipSpnAUF793,2025-07-16T18:22:07.924615,0
+9,ywlTVJXEnMfLSTMLcvKkCGeIwKF3,mcojijosamsa@gmail.com,Samson Ojunga,individual,approved,CT-A22B4A3A,2025-07-09T16:51:27.993000+00:00,,ywlTVJXEnMfLSTMLcvKkCGeIwKF3,2025-07-16T18:22:07.928002,0
