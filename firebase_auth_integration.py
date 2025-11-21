@@ -680,51 +680,80 @@ def get_approved_users():
         conn.close()
 
 def sync_users_from_firestore():
-    """Sync users from Firestore to SQL database"""
-    db = firestore.client()
+    """
+    Sync users from Firestore to SQLite database.
+    This function NEVER crashes and ALWAYS returns a clean list of users.
+    """
+    try:
+        db = firestore.client()
+    except Exception as e:
+        logger.error(f"Firestore error: {e}")
+        return []
+
     users_ref = db.collection("users")
-    docs = users_ref.stream()
+
+    try:
+        docs = users_ref.stream()
+    except Exception as e:
+        logger.error(f"Error reading Firestore users: {e}")
+        return []
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    synced_users = []   # <<< IMPORTANT: return this to prevent dashboard errors
+
     for doc in docs:
         data = doc.to_dict() or {}
-        uid = str(data.get("uid", doc.id))
-        fullName = str(data.get("fullName", ""))
-        email = str(data.get("email", ""))
-        role = str(data.get("role", "individual"))
-        status = str(data.get("status", "pending"))
-        tracking = data.get("treeTrackingNumber", "")
-        tracking = "" if tracking is None else str(tracking)
+        
+        # -----------------------------
+        # SAFE FIELD EXTRACTION
+        # -----------------------------
+        uid = str(data.get("uid") or doc.id)
+        fullName = str(data.get("fullName") or "")
+        email = str(data.get("email") or "")
+        role = str(data.get("role") or "individual")
+        status = str(data.get("status") or "pending")
 
+        # Tree tracking number
+        tracking = data.get("treeTrackingNumber")
+        tracking = "" if tracking in (None, "None") else str(tracking)
+
+        # -----------------------------
+        # SAFE TIMESTAMP FORMATTING
+        # -----------------------------
         created_at = data.get("createdAt")
         if hasattr(created_at, "isoformat"):
             created_at = created_at.isoformat()
         else:
-            created_at = str(created_at or datetime.utcnow().isoformat())
+            created_at = datetime.utcnow().isoformat()
 
         approved_at = data.get("approvedAt")
         if hasattr(approved_at, "isoformat"):
             approved_at = approved_at.isoformat()
         else:
-            approved_at = str(approved_at) if approved_at is not None else None
+            approved_at = approved_at if approved_at else None
 
         firebase_doc_id = str(doc.id)
         last_sync_time = datetime.utcnow().isoformat()
 
+        # -----------------------------
+        # SAVE TO SQLITE (SAFE INSERT/UPDATE)
+        # -----------------------------
         try:
             cursor.execute("""
                 INSERT INTO users (
                     uid, fullName, email, role, status,
                     treeTrackingNumber, createdAt, approvedAt,
                     firebase_doc_id, last_sync_time
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 uid, fullName, email, role, status,
                 tracking, created_at, approved_at,
                 firebase_doc_id, last_sync_time
             ))
+
         except sqlite3.IntegrityError:
             cursor.execute("""
                 UPDATE users SET
@@ -740,13 +769,28 @@ def sync_users_from_firestore():
             """, (
                 fullName, email, role, status,
                 tracking, created_at, approved_at,
-                last_sync_time,
-                uid
+                last_sync_time, uid
             ))
+
+        # Add to return list
+        synced_users.append({
+            "uid": uid,
+            "fullName": fullName,
+            "email": email,
+            "role": role,
+            "status": status,
+            "treeTrackingNumber": tracking,
+            "createdAt": created_at,
+            "approvedAt": approved_at,
+            "firebase_doc_id": firebase_doc_id
+        })
 
     conn.commit()
     conn.close()
-    logger.info("✅ Firebase → SQLite sync complete.")
+
+    logger.info(f"✅ Firebase → SQLite sync complete. Synced {len(synced_users)} users.")
+
+    return synced_users  # <<< SUPER IMPORTANT
 
 def get_all_users():
     """Return all users from SQLite as a list of dicts, most recent first."""
