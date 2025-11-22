@@ -7,6 +7,14 @@ import random
 from pathlib import Path
 import plotly.express as px
 
+# --- Session State Initialization ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "page" not in st.session_state:
+    st.session_state.page = "login"
+
 # ----------------- CONFIGURATION -----------------
 BASE_DIR = Path(__file__).parent if "__file__" in locals() else Path.cwd()
 DATA_DIR = BASE_DIR / "data"
@@ -24,9 +32,7 @@ def generate_field_password():
     return f"CT{number}"
 
 def manage_field_agent_credentials(tree_tracking_number, user_name):
-    """Manage field agent password generation and expiration
-    Field Agent Login: Username = Tree Tracking Number, Password = Field Agent Password
-    """
+    """Manage field agent password generation and expiration for dashboard login"""
     st.subheader("🛡 Field Agent Access")
     conn = None
     try:
@@ -38,7 +44,7 @@ def manage_field_agent_credentials(tree_tracking_number, user_name):
         result = c.fetchone()
         now = int(time.time())
 
-        st.info(f"**Field Agent Login Details:**\n- **Username:** `{tree_tracking_number}` (Your Tree Tracking Number)\n- **Password:** The password generated below.")
+        st.info(f"**Field Agent Login Details for Dashboard:**\n- **Username:** `{tree_tracking_number}`\n- **Password:** Generated below (valid 24 hrs)")
 
         if result:
             password, created_at = result[0], result[1]
@@ -47,7 +53,7 @@ def manage_field_agent_credentials(tree_tracking_number, user_name):
             minutes = (remaining_time_seconds % 3600) // 60
 
             if password and created_at and remaining_time_seconds > 0:
-                st.success(f"🔑 **Active Field Password:** `{password}` (Expires in {hours} hrs {minutes} mins)")
+                st.success(f"🔑 Active Password: `{password}` (Expires in {hours} hrs {minutes} mins)")
                 if st.button("🔄 Regenerate Password", key="regenerate_fa_pass"):
                     new_pass = generate_field_password()
                     c.execute("""
@@ -58,9 +64,7 @@ def manage_field_agent_credentials(tree_tracking_number, user_name):
                     st.success(f"✅ New Password Generated: `{new_pass}` (valid 24 hrs)")
                     st.experimental_rerun()
             else:
-                if result[0] and result[1] and remaining_time_seconds <= 0:
-                    st.warning(f"🔑 Field Password: `{password}` (Expired! Please regenerate.)")
-                st.info("No active field password found or valid creation time. Generate one below.")
+                st.info("No active field password or expired. Generate a new one below.")
                 if st.button("➕ Generate New Password", key="generate_new_fa_pass"):
                     new_pass = generate_field_password()
                     c.execute("""
@@ -71,7 +75,7 @@ def manage_field_agent_credentials(tree_tracking_number, user_name):
                     st.success(f"✅ Password Created: `{new_pass}` (valid 24 hrs)")
                     st.experimental_rerun()
         else:
-            st.info("No field agent record found. Generate a password to create one.")
+            st.info("No password found for this tracking number. Generate one to create access.")
             if st.button("➕ Generate New Password", key="generate_new_fa_pass_new"):
                 new_pass = generate_field_password()
                 c.execute("""
@@ -137,13 +141,14 @@ def unified_user_dashboard():
 
     st.markdown(f"## 🌳 {username}'s Forest Dashboard")
     
-    # Display Tree Tracking Number boldly and clearly
+    # Display Tree Tracking Number boldly
     st.markdown(f"### **Tracking Number:** <span style='color: #28a745; font-size: 1.5em;'>`{tree_tracking_number}`</span>", unsafe_allow_html=True)
     
+    # Load tree data
     trees_df = load_tree_data(tree_tracking_number)
     metrics = calculate_metrics(trees_df)
 
-    # Key metrics (Well designed and modern - using st.metric)
+    # Key metrics
     st.markdown("### 📊 Tree Metrics")
     col1,col2,col3,col4 = st.columns(4)
     with col1:
@@ -157,18 +162,31 @@ def unified_user_dashboard():
 
     st.markdown("---")
     
-    # Field agent password (Keep this here for easy access, as it's a utility for the user)
+    # Field agent password (for dashboard login)
     manage_field_agent_credentials(tree_tracking_number, username)
 
     st.markdown("---")
 
-    # Tree Inventory (Appears first below the metrics)
+    # Tree Inventory
     st.subheader("📋 Tree Inventory")
     if not trees_df.empty:
         st.dataframe(trees_df)
         st.download_button("Download Trees CSV", trees_df.to_csv(index=False).encode(), "my_trees.csv")
     else:
         st.info("No trees found for your tracking number.")
+
+    st.markdown("---")
+    
+    # Shared Kobo Planting Form Link for all agents of this institution
+    st.subheader("🌱 Plant Trees (Shared Form Link)")
+    KOBO_FORM_CODE = st.secrets.get("KOBO_FORM_CODE", "YOUR_FORM_CODE_HERE")
+    planting_url = f"https://ee.kobotoolbox.org/x/{KOBO_FORM_CODE}?treeTrackingNumber={tree_tracking_number}"
+    st.markdown(f"""
+    <p>All field agents of this institution use the same link. Ensure your `treeTrackingNumber` is pre-filled:</p>
+    <a href="{planting_url}" target="_blank">
+        <button style='background-color:#1D7749;color:white;padding:0.6em 1.2em;border:none;border-radius:5px;cursor:pointer;'>➕ Fill Planting Form</button>
+    </a>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -182,8 +200,6 @@ def unified_user_dashboard():
         fig.update_layout(xaxis_title="Species Local Name", yaxis_title="Number of Trees")
         st.plotly_chart(fig, use_container_width=True)
 
-    # Growth Stages section removed as requested
-    
 # ----------------- MAIN -----------------
 if __name__=="__main__":
     unified_user_dashboard()
